@@ -21,7 +21,7 @@ function ajax(options, callback) {
     headers: {},
     json: true,
     processData: true,
-    timeout: 10000
+    timeout: 60000
   };
 
   options = extend(true, defaultOptions, options);

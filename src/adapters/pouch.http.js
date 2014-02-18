@@ -3,7 +3,7 @@
 var Pouch = require('../pouch.js');
 var PouchUtils = require('../pouch.utils.js');
 var errors = require('../deps/errors');
-var HTTP_TIMEOUT = 10000;
+var HTTP_TIMEOUT = 60000;
 
 // parseUri 1.2.2
 // (c) Steven Levithan <stevenlevithan.com>
