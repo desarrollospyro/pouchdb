@@ -701,6 +701,22 @@ function HttpPouch(opts, callback) {
       params.push('endkey=' + encodeURIComponent(JSON.stringify(opts.endkey)));
     }
 
+    // Añadir parametros que no soporta esta version de pouchdb
+    if (opts.startkey_docid) {
+      params.push('startkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.startkey_docid)));
+    }
+    if (opts.endkey_docid) {
+      params.push('endkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.endkey_docid)));
+    }
+    // este parametro es especial nuestro para circunvalar el BUG de IOS 7
+    // que hace que se cachee siempre la misma llamada POST al hacer allDocs
+    if (opts.touchtstamp) {
+      params.push('touchtstamp=' + opts.touchtstamp);
+    }
+
+
     // If opts.limit exists, add the limit value to the parameter list.
     if (opts.limit) {
       params.push('limit=' + opts.limit);
@@ -2501,9 +2517,9 @@ function webSqlPouch(opts, callback) {
 
   api._changes = function idb_changes(opts) {
 
-    
+
     //console.log(name + ': Start Changes Feed: continuous=' + opts.continuous);
-    
+
 
     if (opts.continuous) {
       var id = name + ':' + PouchUtils.uuid();
@@ -3324,7 +3340,7 @@ Dual licensed under the MIT and GPL licenses.
 
 
 function uuid(len, radix) {
-  var chars = uuid.CHARS 
+  var chars = uuid.CHARS
   var uuidInner = [];
   var i;
 
@@ -3578,6 +3594,16 @@ var MapReduce = function (db) {
     }
     if (typeof opts.skip !== 'undefined') {
       params.push('skip=' + opts.skip);
+    }
+
+    // Añadir parametros que no soporta esta version de pouchdb
+    if (typeof opts.startkey_docid !== 'undefined') {
+      params.push('startkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.startkey_docid)));
+    }
+    if (typeof opts.endkey_docid !== 'undefined') {
+      params.push('endkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.endkey_docid)));
     }
 
     // If keys are supplied, issue a POST request to circumvent GET query string limits
