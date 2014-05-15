@@ -1264,7 +1264,7 @@ function HttpPouch(opts, callback) {
   }));
 
   // Add the document given by doc (in JSON string format) to the database
-  // given by host. This does not assume that doc is a new document 
+  // given by host. This does not assume that doc is a new document
   // (i.e. does not have a _id or a _rev field.)
   api.post = utils.adapterFun('post', function (doc, opts, callback) {
     // If no options were given, set the callback to be the second parameter
@@ -1329,7 +1329,7 @@ function HttpPouch(opts, callback) {
     var method = 'GET';
 
     // TODO I don't see conflicts as a valid parameter for a
-    // _all_docs request 
+    // _all_docs request
     // (see http://wiki.apache.org/couchdb/HTTP_Document_API#all_docs)
     if (opts.conflicts) {
       params.push('conflicts=true');
@@ -1367,6 +1367,17 @@ function HttpPouch(opts, callback) {
     if (opts.endkey) {
       params.push('endkey=' + encodeURIComponent(JSON.stringify(opts.endkey)));
     }
+
+    // Añadir parametros que no soporta esta version de pouchdb
+    if (opts.startkey_docid) {
+      params.push('startkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.startkey_docid)));
+    }
+    if (opts.endkey_docid) {
+      params.push('endkey_docid=' +
+                  encodeURIComponent(JSON.stringify(opts.endkey_docid)));
+    }
+
 
     if (typeof opts.inclusive_end !== 'undefined') {
       params.push('inclusive_end=' + !!opts.inclusive_end);
@@ -4291,7 +4302,7 @@ function ajax(options, adapterCallback) {
     headers: {},
     json: true,
     processData: true,
-    timeout: 10000,
+    timeout: 60000,
     cache: false
   };
 
