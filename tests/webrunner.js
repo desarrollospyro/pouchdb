@@ -1,37 +1,16 @@
-/*globals $:false, console: false */
+/* global mocha: true */
 
-"use strict";
+'use strict';
 
-// use query parameter testFiles if present,
-// eg: test.html?testFiles=test.basics.js
-var testFiles = window.location.search.match(/[?&]testFiles=([^&]+)/);
-testFiles = testFiles && testFiles[1].split(',') || [];
-var started = new Date();
-if (!testFiles.length) {
-  // If you want to run performance tests, uncomment these tests
-  // and comment out the testFiles below
-  //testFiles = [
-  //  'perf.attachments.js'
-  //];
+// use query parameter sourceFile if present,
+// eg: test.html?sourceFile=pouchdb-leveljs.js
+var sourceFile = window.location.search.match(/[?&]sourceFile=([^&]+)/);
 
-  // Temporarily disable tests that can leave CouchDB in non Admin Party
-  // 'test.cors.js'
-  // 'test.auth_replication.js',
-  testFiles = ['test.basics.js', 'test.all_dbs.js', 'test.changes.js',
-               'test.bulk_docs.js', 'test.all_docs.js', 'test.conflicts.js',
-               'test.revs_diff.js',
-               'test.replication.js', 'test.views.js', 'test.taskqueue.js',
-               'test.design_docs.js', 'test.issue221.js', 'test.http.js',
-               'test.compaction.js', 'test.get.js',
-               'test.attachments.js', 'test.uuids.js', 'test.slash_id.js'];
+if (!sourceFile) {
+  sourceFile = '../dist/pouchdb-nightly.js';
+} else {
+  sourceFile = '../dist/' + sourceFile[1];
 }
-
-testFiles.unshift('test.utils.js');
-
-// The tests use Pouch.extend and Pouch.ajax directly (for now)
-var sourceFiles = [
-  '../dist/pouchdb-nightly.js'
-];
 
 // Thanks to http://engineeredweb.com/blog/simple-async-javascript-loader/
 function asyncLoadScript(url, callback) {
@@ -44,15 +23,16 @@ function asyncLoadScript(url, callback) {
   script.src = url;
 
   // Handle the case where an optional callback was passed in.
-  if ( "function" === typeof(callback) ) {
-    script.onload = function() {
+  if ("function" === typeof(callback)) {
+    script.onload = function () {
       callback();
 
-      // Clear it out to avoid getting called more than once or any memory leaks.
+      // Clear it out to avoid getting called more than once or any 
+      // memory leaks.
       script.onload = script.onreadystatechange = undefined;
     };
-    script.onreadystatechange = function() {
-      if ( "loaded" === script.readyState || "complete" === script.readyState ) {
+    script.onreadystatechange = function () {
+      if ("loaded" === script.readyState || "complete" === script.readyState) {
         script.onload();
       }
     };
@@ -63,34 +43,58 @@ function asyncLoadScript(url, callback) {
   firstScript.parentNode.insertBefore(script, firstScript);
 }
 
-function startQUnit() {
-  QUnit.config.reorder = false;
+function startTests() {
+  asyncLoadScript(sourceFile, function () {
+    var runner = mocha.run();
+    window.results = {
+      lastPassed: '',
+      passed: 0,
+      failed: 0,
+      failures: []
+    };
+
+    runner.on('pass', function (e) {
+      window.results.lastPassed = e.title;
+      window.results.passed++;
+    });
+
+    runner.on('fail', function (e) {
+      window.results.failed++;
+      window.results.failures.push({
+        title: e.title,
+        message: e.err.message,
+        stack: e.err.stack
+      });
+    });
+
+    runner.on('end', function () {
+      window.results.completed = true;
+      window.results.passed++;
+    });
+  });
 }
 
-function asyncParForEach(array, fn, callback) {
-  if (array.length === 0) {
-    callback(); // done immediately
-    return;
+if (window.cordova) {
+  var hasGrep = window.GREP &&
+      window.location.search.indexOf('grep') === -1;
+  var hasEs5Shim = window.ES5_SHIM &&
+      window.location.search.indexOf('es5Shim') === -1;
+
+  if (hasGrep || hasEs5Shim) {
+    var params = [];
+    if (hasGrep) {
+      params.push('grep=' + encodeURIComponent(window.GREP));
+    }
+    if (hasEs5Shim) {
+      params.push('es5Shim=' + encodeURIComponent(window.ES5_SHIM));
+    }
+    window.location.search += (window.location.search ? '&' : '?') +
+      params.join('&');
+  } else {
+    document.addEventListener("deviceready", startTests, false);
   }
-  var toLoad = array.shift();
-  fn(toLoad, function() {
-    asyncParForEach(array, fn, callback);
-  });
+} else {
+  startTests();
 }
 
-QUnit.config.testTimeout = 60000;
 
-QUnit.jUnitReport = function(report) {
-  document.body.classList.add('testsComplete');
-  report.started = started;
-  report.completed = new Date();
-  report.passed = (report.results.failed === 0);
-  delete report.xml;
-  window.testReport = report;
-};
-
-asyncParForEach(sourceFiles, asyncLoadScript, function() {
-  asyncParForEach(testFiles, asyncLoadScript, function() {
-    startQUnit();
-  });
-});

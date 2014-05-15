@@ -1,80 +1,55 @@
-/*globals initTestDB: false, emit: true, generateAdapterUrl: false */
-/*globals PERSIST_DATABASES: false, initDBPair: false, utils: true, strictEqual: false */
-/*globals Pouch.ajax: true, LevelPouch: true, makeDocs: false */
-/*globals readBlob: false, makeBlob: false, base64Blob: false */
-/*globals cleanupTestDatabases: false */
+'use strict';
 
-"use strict";
+var adapters = ['local', 'http'];
+var repl_adapters = [
+  ['local', 'http'],
+  ['http', 'http'],
+  ['http', 'local'],
+  ['local', 'local']
+];
 
-var adapters = ['local-1', 'http-1'];
-var repl_adapters = [['local-1', 'http-1'],
-                     ['http-1', 'http-2'],
-                     ['http-1', 'local-1'],
-                     ['local-1', 'local-2']];
-var qunit = module;
-var LevelPouch;
-var PouchUtils;
-var utils;
+adapters.forEach(function (adapter) {
+  describe('test.slash_ids.js-' + adapter, function () {
 
-if (typeof module !== undefined && module.exports) {
-  Pouch = require('../src/pouch.js');
-  LevelPouch = require('../src/adapters/pouch.leveldb.js');
-  PouchUtils = require('../src/pouch.utils.js');
-  utils = require('./test.utils.js');
+    var dbs = {};
 
-  for (var k in utils) {
-    global[k] = global[k] || utils[k];
-  }
-  qunit = QUnit.module;
-}
+    beforeEach(function (done) {
+      dbs.name = testUtils.adapterUrl(adapter, 'test_slash_ids');
+      testUtils.cleanup([dbs.name], done);
+    });
 
-adapters.map(function(adapter) {
-  qunit('functions with / in _id: ' + adapter, {
-    setup : function () {
-      this.name = generateAdapterUrl(adapter);
-      Pouch.enableAllDbs = true;
-    },
-    teardown: cleanupTestDatabases
-  });
+    after(function (done) {
+      testUtils.cleanup([dbs.name], done);
+    });
 
-  var binAttDoc = {
-    _id: "bin_doc",
-    _attachments:{
-      "foo.txt": {
-        content_type:"text/plain",
-        data: "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ="
-      }
-    }
-  };
 
-  asyncTest('Insert a doc, putAttachment and allDocs', function() {
-    initTestDB(this.name, function(err, db) {
-      ok(!err, 'opened the pouch');
+    it('Insert a doc, putAttachment and allDocs', function (done) {
+      var db = new PouchDB(dbs.name);
       var docId = 'doc/with/slashes';
       var attachmentId = 'attachment/with/slashes';
       var blobData = 'attachment content';
-      var blob = makeBlob(blobData);
+      var blob = testUtils.makeBlob(blobData);
       var doc = {_id: docId, test: true};
-      db.put(doc, function(err, info) {
-        ok(!err, 'saved doc');
-        strictEqual(info.id, 'doc/with/slashes', 'id is the same as inserted');
-        db.putAttachment(docId, attachmentId, info.rev, blob, 'text/plain', function(err, res) {
-          db.getAttachment(docId, attachmentId, function(err, res) {
-            readBlob(res, function(data) {
-              db.get(docId, function(err, res){
-                strictEqual(res._id, docId);
-                ok(attachmentId in res._attachments, 'contains correct attachment');
-                start();
+      db.put(doc, function (err, info) {
+        should.not.exist(err, 'saved doc');
+        info.id.should.equal('doc/with/slashes', 'id is the same as inserted');
+        db.putAttachment(docId, attachmentId, info.rev, blob, 'text/plain',
+                         function (err, res) {
+          db.getAttachment(docId, attachmentId, function (err, res) {
+            testUtils.readBlob(res, function (data) {
+              db.get(docId, function (err, res) {
+                res._id.should.equal(docId);
+                res._attachments.should.include.keys(attachmentId);
+                done();
               });
             });
           });
         });
       });
     });
-  });
 
-  asyncTest('BulkDocs and changes', function() {
-    initTestDB(this.name, function(err, db) {
+    it('BulkDocs and changes', function (done) {
+      var db = new PouchDB(dbs.name);
       var docs = [
         {_id: 'part/doc1', int: 1},
         {_id: 'part/doc2', int: 2, _attachments: {
@@ -85,67 +60,86 @@ adapters.map(function(adapter) {
         }},
         {_id: 'part/doc3', int: 3}
       ];
-      db.bulkDocs({docs: docs}, function(err, res) {
-        for(var i = 0; i < 3; i++){
-          strictEqual(res[i].ok, true, 'correctly inserted ' + docs[i]._id);
+      db.bulkDocs({ docs: docs }, function (err, res) {
+        for (var i = 0; i < 3; i++) {
+          res[i].ok.should.equal(true, 'correctly inserted ' + docs[i]._id);
         }
-        db.allDocs({include_docs: true, attachments: true}, function(err, res) {
-          res.rows.sort(function(a, b){return a.doc.int - b.doc.int;});
-          for(var i = 0; i < 3; i++){
-            strictEqual(res.rows[i].doc._id, docs[i]._id, '(allDocs) correctly inserted ' + docs[i]._id);
+        db.allDocs({
+          include_docs: true,
+          attachments: true
+        }, function (err, res) {
+          res.rows.sort(function (a, b) {
+            return a.doc.int - b.doc.int;
+          });
+          for (var i = 0; i < 3; i++) {
+            res.rows[i].doc._id.should
+              .equal(docs[i]._id, '(allDocs) correctly inserted ' +
+                     docs[i]._id);
           }
-          strictEqual('attachment/with/slash' in res.rows[1].doc._attachments, true, 'doc2 has attachment');
+          res.rows[1].doc._attachments.should.include
+            .keys('attachment/with/slash');
           db.changes({
-            complete: function(err, res) {
-              res.results.sort(function(a, b){return a.id.localeCompare(b.id);});
-              for(var i = 0; i < 3; i++){
-                strictEqual(res.results[i].id, docs[i]._id, '(changes) correctly inserted ' + docs[i]._id);
+            complete: function (err, res) {
+              res.results.sort(function (a, b) {
+                return a.id.localeCompare(b.id);
+              });
+              for (var i = 0; i < 3; i++) {
+                res.results[i].id.should
+                  .equal(docs[i]._id, 'correctly inserted');
               }
-              start();
+              done();
             }
           });
         });
       });
     });
+
   });
 });
 
 
-repl_adapters.map(function(adapters) {
+repl_adapters.forEach(function (adapters) {
+  describe('test.slash_ids.js-' + adapters[0] + '-' + adapters[1], function () {
 
-  qunit('replication with / in _id: ' + adapters[0] + ':' + adapters[1], {
-    setup : function () {
-      this.name = generateAdapterUrl(adapters[0]);
-      this.remote = generateAdapterUrl(adapters[1]);
-    }
-  });
+    var dbs = {};
 
-  asyncTest("Attachments replicate", function() {
-    var binAttDoc = {
-      _id: "bin_doc/with/slash",
-      _attachments:{
-        "foo/with/slash.txt": {
-          content_type:"text/plain",
-          data: "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ="
+    beforeEach(function (done) {
+      dbs.name = testUtils.adapterUrl(adapters[0], 'test_slash_ids');
+      dbs.remote = testUtils.adapterUrl(adapters[1], 'test_slash_ids_remmote');
+      testUtils.cleanup([dbs.name, dbs.remote], done);
+    });
+
+    afterEach(function (done) {
+      testUtils.cleanup([dbs.name, dbs.remote], done);
+    });
+
+
+    it('Attachments replicate', function (done) {
+      var binAttDoc = {
+        _id: 'bin_doc/with/slash',
+        _attachments: {
+          'foo/with/slash.txt': {
+            content_type: 'text/plain',
+            data: 'VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ='
+          }
         }
-      }
-    };
-
-    var docs1 = [
-      binAttDoc,
-      {_id: "0", integer: 0},
-      {_id: "1", integer: 1},
-      {_id: "2", integer: 2},
-      {_id: "3", integer: 3}
-    ];
-
-    initDBPair(this.name, this.remote, function(db, remote) {
-      remote.bulkDocs({docs: docs1}, function(err, info) {
-        var replicate = db.replicate.from(remote, function() {
-          db.get('bin_doc/with/slash', {attachments: true}, function(err, doc) {
-            equal(binAttDoc._attachments['foo/with/slash.txt'].data,
-                  doc._attachments['foo/with/slash.txt'].data);
-            start();
+      };
+      var docs1 = [
+        binAttDoc,
+        {_id: '0', integer: 0},
+        {_id: '1', integer: 1},
+        {_id: '2', integer: 2},
+        {_id: '3', integer: 3}
+      ];
+      var db = new PouchDB(dbs.name);
+      var remote = new PouchDB(dbs.remote);
+      remote.bulkDocs({ docs: docs1 }, function (err, info) {
+        db.replicate.from(remote, function () {
+          db.get('bin_doc/with/slash', { attachments: true },
+            function (err, doc) {
+            binAttDoc._attachments['foo/with/slash.txt'].data.should
+              .equal(doc._attachments['foo/with/slash.txt'].data);
+            done();
           });
         });
       });

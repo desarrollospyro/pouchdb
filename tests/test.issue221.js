@@ -1,66 +1,48 @@
-/*globals initTestDB: false, emit: true, generateAdapterUrl: false, strictEqual: false */
-/*globals PERSIST_DATABASES: false, initDBPair: false, utils: true */
-/*globals Pouch.ajax: true, LevelPouch: true */
-/*globals cleanupTestDatabases: false */
-
-"use strict";
+'use strict';
 
 var adapters = [
-  ['local-1', 'http-1'],
-  ['http-1', 'http-2'],
-  ['http-1', 'local-1'],
-  ['local-1', 'local-2']
+  ['local', 'http'],
+  ['http', 'http'],
+  ['http', 'local'],
+  ['local', 'local']
 ];
-var qunit = module;
-var LevelPouch;
-var utils;
 
-if (typeof module !== undefined && module.exports) {
-  Pouch = require('../src/pouch.js');
-  LevelPouch = require('../src/adapters/pouch.leveldb.js');
-  utils = require('./test.utils.js');
+adapters.forEach(function (adapters) {
+  describe('test.issue221.js-' + adapters[0] + '-' + adapters[1], function () {
 
-  for (var k in utils) {
-    global[k] = global[k] || utils[k];
-  }
-  qunit = QUnit.module;
-}
+    var dbs = {};
 
-adapters.map(function(adapters) {
+    beforeEach(function (done) {
+      dbs.name = testUtils.adapterUrl(adapters[0], 'test_221');
+      dbs.remote = testUtils.adapterUrl(adapters[1], 'test_221_remote');
+      testUtils.cleanup([dbs.name, dbs.remote], done);
+    });
 
-  qunit('replication + compaction: ' + adapters[0] + ':' + adapters[1], {
-    setup: function() {
-      this.local = generateAdapterUrl(adapters[0]);
-      this.remote = generateAdapterUrl(adapters[1]);
-      Pouch.enableAllDbs = true;
-    },
-    teardown: cleanupTestDatabases
-  });
+    after(function (done) {
+      testUtils.cleanup([dbs.name, dbs.remote], done);
+    });
 
-  var doc = { _id: '0', integer: 0 };
+    var doc = {_id: '0', integer: 0};
 
-  asyncTest('Testing issue #221', function() {
-    var self = this;
-    // Create databases.
-    initDBPair(self.local, self.remote, function(local, remote) {
+    it('Testing issue #221', function (done) {
+      var local = new PouchDB(dbs.name);
+      var remote = new PouchDB(dbs.remote);
       // Write a doc in CouchDB.
-      remote.put(doc, function(err, results) {
+      remote.put(doc, function (err, results) {
         // Update the doc.
         doc._rev = results.rev;
         doc.integer = 1;
-        remote.put(doc, function(err, results) {
+        remote.put(doc, function (err, results) {
           // Compact the db.
-          remote.compact(function() {
-            remote.get(doc._id, {revs_info:true},function(err, data) {
+          remote.compact(function () {
+            remote.get(doc._id, { revs_info: true }, function (err, data) {
               var correctRev = data._revs_info[0];
-              local.replicate.from(remote, function(err, results) {
+              local.replicate.from(remote, function (err, results) {
                 // Check the Pouch doc.
-                local.get(doc._id, function(err, results) {
-                  strictEqual(results._rev, correctRev.rev,
-                              'correct rev stored after replication');
-                  strictEqual(results.integer, 1,
-                              'correct content stored after replication');
-                  start();
+                local.get(doc._id, function (err, results) {
+                  results._rev.should.equal(correctRev.rev);
+                  results.integer.should.equal(1);
+                  done();
                 });
               });
             });
@@ -68,27 +50,25 @@ adapters.map(function(adapters) {
         });
       });
     });
-  });
 
-  asyncTest('Testing issue #221 again', function() {
-    var self = this;
-    // Create databases.
-    initDBPair(self.local, self.remote, function(local, remote) {
+    it('Testing issue #221 again', function (done) {
+      var local = new PouchDB(dbs.name);
+      var remote = new PouchDB(dbs.remote);
       // Write a doc in CouchDB.
-      remote.put(doc, function(err, results) {
+      remote.put(doc, function (err, results) {
         doc._rev = results.rev;
         // Second doc so we get 2 revisions from replicate.
-        remote.put(doc, function(err, results) {
+        remote.put(doc, function (err, results) {
           doc._rev = results.rev;
-          local.replicate.from(remote, function(err, results) {
+          local.replicate.from(remote, function (err, results) {
             doc.integer = 1;
             // One more change
-            remote.put(doc, function(err, results) {
+            remote.put(doc, function (err, results) {
               // Testing if second replications fails now
-              local.replicate.from(remote, function(err, results) {
-                local.get(doc._id, function(err, results) {
-                  strictEqual(results.integer, 1, 'correct content stored after replication');
-                  start();
+              local.replicate.from(remote, function (err, results) {
+                local.get(doc._id, function (err, results) {
+                  results.integer.should.equal(1);
+                  done();
                 });
               });
             });
@@ -96,5 +76,6 @@ adapters.map(function(adapters) {
         });
       });
     });
+
   });
 });

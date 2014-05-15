@@ -1,32 +1,26 @@
 #!/bin/bash
-# publish requires jam and tin installed
-# install with npm install tin jamjs
+
+#make sure deps are up to date
+rm -r node_modules
+npm install
+
+# get current version
+VERSION=$(node --eval "console.log(require('./package.json').version);")
 
 # Build
 git checkout -b build
-./node_modules/tin/bin/tin -v $1
-echo "module.exports = '"$1"';" > src/version.js
+
 npm run build
 git add dist -f
-git add src/version.js package.json bower.json component.json
-git commit -m "build $1"
+git add lib/version-browser.js
+git commit -m "build $VERSION"
 
 # Tag and push
-git tag $1
-git push --tags git@github.com:daleharvey/pouchdb.git $1
+git tag $VERSION
+git push --tags git@github.com:daleharvey/pouchdb.git $VERSION
 
 # Publish JS modules
 npm publish
-./node_modules/jamjs/bin/jam.js publish
-
-# Build pouchdb.com
-cd docs
-jekyll build
-cd ..
-
-# Publish pouchdb.com + nightly
-scp -r docs/_site/* pouchdb.com:www/pouchdb.com
-scp dist/* pouchdb.com:www/download.pouchdb.com
 
 # Cleanup
 git checkout master
