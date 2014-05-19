@@ -429,7 +429,7 @@ AbstractPouchDB.prototype.compact =
   }});
 });
 
-/* Begin api wrappers. Specific functionality to storage belongs in the 
+/* Begin api wrappers. Specific functionality to storage belongs in the
    _[method] */
 AbstractPouchDB.prototype.get =
   utils.adapterFun('get', function (id, opts, callback) {
@@ -4061,7 +4061,7 @@ Changes.prototype.filterChanges = function (opts) {
         return;
       }
       if (ddoc && ddoc.views && ddoc.views[viewName[1]]) {
-        
+
         var filter = evalView(ddoc.views[viewName[1]].map);
         opts.filter = filter;
         self.doChanges(opts);
@@ -4159,7 +4159,7 @@ function PouchDB(name, opts, callback) {
       delete resp.then;
       fulfill(resp);
     };
-  
+
     opts = utils.clone(opts);
     var originalName = opts.name || name;
     var backend, error;
@@ -4173,7 +4173,7 @@ function PouchDB(name, opts, callback) {
         }
 
         backend = PouchDB.parseAdapter(originalName, opts);
-        
+
         opts.originalName = originalName;
         opts.name = backend.name;
         opts.adapter = opts.adapter || backend.adapter;
@@ -4249,7 +4249,7 @@ function PouchDB(name, opts, callback) {
       PouchDB.emit('created', opts.originalName);
       self.taskqueue.ready(self);
       callback(null, self);
-      
+
     });
     if (opts.skipSetup) {
       self.taskqueue.ready(self);
@@ -4303,14 +4303,25 @@ function ajax(options, adapterCallback) {
     json: true,
     processData: true,
     timeout: 60000,
-    cache: false
+    cache: true // antes pordefecto era false
   };
 
   options = utils.extend(true, defaultOptions, options);
 
-  // cache-buster, specifically designed to work around IE's aggressive caching
-  // see http://www.dashbay.com/2011/05/internet-explorer-caches-ajax/
-  if (options.method === 'GET' && !options.cache) {
+  // esta opcion la quitamos
+
+  // // cache-buster, specifically designed to work around IE's aggressive caching
+  // // see http://www.dashbay.com/2011/05/internet-explorer-caches-ajax/
+  // if (options.method === 'GET' && !options.cache) {
+  //   var hasArgs = options.url.indexOf('?') !== -1;
+  //   options.url += (hasArgs ? '&' : '?') + '_nonce=' + utils.uuid(16);
+  // }
+
+  //
+
+  // Error en IOS 7 cachea llamadas POST de forma erronea
+  // aqui añadimos timestamp a la url para evitarlo
+  if (options.method === 'POST'){
     var hasArgs = options.url.indexOf('?') !== -1;
     options.url += (hasArgs ? '&' : '?') + '_nonce=' + utils.uuid(16);
   }
@@ -4754,7 +4765,7 @@ Dual licensed under the MIT and GPL licenses.
  *   >>> Math.uuid(15)     // 15 character ID (default base=62)
  *   "VcydxgltxrVZSTV"
  *
- *   // Two arguments - returns ID of the specified length, and radix. 
+ *   // Two arguments - returns ID of the specified length, and radix.
  *   // (Radix must be <= 62)
  *   >>> Math.uuid(8, 2)  // 8 character ID (base=2)
  *   "01001010"
@@ -6149,7 +6160,7 @@ exports.clone = function (obj) {
 };
 exports.inherits = _dereq_('inherits');
 // Determine id an ID is valid
-//   - invalid IDs begin with an underescore that does not begin '_design' or 
+//   - invalid IDs begin with an underescore that does not begin '_design' or
 //     '_local'
 //   - any other string value is a valid id
 // Returns the specific error object for each case
@@ -7167,7 +7178,7 @@ module.exports = function all(iterable) {
   var resolved = 0;
   var i = -1;
   var promise = new Promise(INTERNAL);
-  
+
   while (++i < len) {
     allResolver(iterable[i], i);
   }
@@ -7277,7 +7288,7 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
   }
   var promise = new Promise(INTERNAL);
 
-  
+
   if (this.state !== states.PENDING) {
     var resolver = this.state === states.FULFILLED ? onFulfilled: onRejected;
     unwrap(promise, resolver, this.outcome);
@@ -7390,7 +7401,7 @@ function safelyResolveThenable(self, thenable) {
   function tryToUnwrap() {
     thenable(onSuccess, onError);
   }
-  
+
   var result = tryCatch(tryToUnwrap);
   if (result.status === 'error') {
     onError(result.value);
@@ -7615,7 +7626,7 @@ module.exports = function (opts) {
         db.auto_compaction = true;
         var view = {
           name: depDbName,
-          db: db, 
+          db: db,
           sourceDB: sourceDB,
           adapter: sourceDB.adapter,
           mapFun: mapFun,
@@ -7660,7 +7671,7 @@ var toIndexableString = pouchCollate.toIndexableString;
 var normalizeKey = pouchCollate.normalizeKey;
 var createView = _dereq_('./create-view');
 var evalFunc = _dereq_('./evalfunc');
-var log; 
+var log;
 /* istanbul ignore else */
 if ((typeof console !== 'undefined') && (typeof console.log === 'function')) {
   log = Function.prototype.bind.call(console.log, console);
@@ -8429,7 +8440,7 @@ utils.inherits(QueryParseError, Error);
 
 var MIN_MAGNITUDE = -324; // verified by -Number.MIN_VALUE
 var MAGNITUDE_DIGITS = 3; // ditto
-var SEP = ''; // set to '_' for easier debugging 
+var SEP = ''; // set to '_' for easier debugging
 
 var utils = _dereq_('./utils');
 
