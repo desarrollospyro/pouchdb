@@ -717,6 +717,11 @@ function HttpPouch(opts, callback) {
     }
 
 
+    if (opts.full_text) {
+      params.push('full_text=' +
+                  encodeURIComponent(opts.full_text));
+    }
+
     // If opts.limit exists, add the limit value to the parameter list.
     if (opts.limit) {
       params.push('limit=' + opts.limit);
@@ -3604,6 +3609,11 @@ var MapReduce = function (db) {
     if (typeof opts.endkey_docid !== 'undefined') {
       params.push('endkey_docid=' +
                   encodeURIComponent(JSON.stringify(opts.endkey_docid)));
+    }
+
+    if (typeof opts.full_text !== 'undefined') {
+      params.push('full_text=' +
+                  encodeURIComponent(opts.full_text));
     }
 
     // If keys are supplied, issue a POST request to circumvent GET query string limits
