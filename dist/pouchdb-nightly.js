@@ -722,6 +722,11 @@ function HttpPouch(opts, callback) {
                   encodeURIComponent(opts.full_text));
     }
 
+    if (opts.q) {
+      params.push('q=' +
+                  encodeURIComponent(opts.q));
+    }
+
     // If opts.limit exists, add the limit value to the parameter list.
     if (opts.limit) {
       params.push('limit=' + opts.limit);
@@ -3566,6 +3571,8 @@ var MapReduce = function (db) {
     var body = undefined;
     var method = 'GET';
 
+    var isFTsearch = false;
+
     // If opts.reduce exists and is defined, then add it to the list
     // of parameters.
     // If reduce=false then the results are that of only the map function
@@ -3614,6 +3621,15 @@ var MapReduce = function (db) {
     if (typeof opts.full_text !== 'undefined') {
       params.push('full_text=' +
                   encodeURIComponent(opts.full_text));
+
+      isFTsearch = true;
+    }
+
+    if (typeof opts.q !== 'undefined') {
+      params.push('q=' +
+                  encodeURIComponent(opts.q));
+
+      isFTsearch = true;
     }
 
     // If keys are supplied, issue a POST request to circumvent GET query string limits
@@ -3629,10 +3645,19 @@ var MapReduce = function (db) {
 
     // We are referencing a query defined in the design doc
     if (typeof fun === 'string') {
+
       var parts = fun.split('/');
+
+      var url_ = '_design/' + parts[0] + '/_view/' + parts[1] + params;
+
+      if(isFTsearch){
+        url_ = '_fti/_design/' + parts[0] + '/' + parts[1] + params;
+      }
+
+
       db.request({
         method: method,
-        url: '_design/' + parts[0] + '/_view/' + parts[1] + params,
+        url: url_,
         body: body
       }, callback);
       return;
