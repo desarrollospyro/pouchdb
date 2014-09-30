@@ -716,6 +716,9 @@ function HttpPouch(opts, callback) {
       params.push('touchtstamp=' + opts.touchtstamp);
     }
 
+    if (typeof opts.stale !== 'undefined') {
+      params.push('stale=' + opts.stale);
+    }
 
     if (opts.full_text) {
       params.push('full_text=' +
@@ -3606,6 +3609,10 @@ var MapReduce = function (db) {
     }
     if (typeof opts.skip !== 'undefined') {
       params.push('skip=' + opts.skip);
+    }
+
+    if (typeof opts.stale !== 'undefined') {
+      params.push('stale=' + opts.stale);
     }
 
     // Añadir parametros que no soporta esta version de pouchdb
