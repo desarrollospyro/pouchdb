@@ -967,7 +967,7 @@ function HttpPouch(opts, callback) {
 
     // Return a method to cancel this method from processing any more
     return {
-      xhr: xhr,
+      ajax: xhr,
       cancel: function () {
         //console.log(db_url + ': Cancel Changes Feed');
         opts.aborted = true;
