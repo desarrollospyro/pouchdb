@@ -704,7 +704,7 @@ function HttpPouch(opts, callback) {
     // Añadir parametros que no soporta esta version de pouchdb
     if (opts.startkey_docid) {
       params.push('startkey_docid=' +
-                  encodeURIComponent(JSON.stringify(opts.startkey_docid)));
+                  encodeURIComponent(opts.startkey_docid));
     }
     if (opts.endkey_docid) {
       params.push('endkey_docid=' +
@@ -3621,7 +3621,7 @@ var MapReduce = function (db) {
     // Añadir parametros que no soporta esta version de pouchdb
     if (typeof opts.startkey_docid !== 'undefined') {
       params.push('startkey_docid=' +
-                  encodeURIComponent(JSON.stringify(opts.startkey_docid)));
+                  encodeURIComponent(opts.startkey_docid));
     }
     if (typeof opts.endkey_docid !== 'undefined') {
       params.push('endkey_docid=' +
