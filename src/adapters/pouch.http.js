@@ -349,7 +349,12 @@ function HttpPouch(opts, callback) {
     if (opts.conflicts) {
       params.push('conflicts=' + opts.conflicts);
     }
-
+    
+    if(window.tipo_sistema=="windows"){
+      console.log("añadir touchtstamp en Windows");
+      params.push('touchtstamp=' + moment().unix());
+    }
+    
     // Format the list of parameters into a valid URI query string
     params = params.join('&');
     params = params === '' ? '' : '?' + params;
