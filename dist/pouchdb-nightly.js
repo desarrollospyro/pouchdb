@@ -407,12 +407,12 @@ function HttpPouch(opts, callback) {
     if (opts.conflicts) {
       params.push('conflicts=' + opts.conflicts);
     }
-    
+
     if(window.tipo_sistema=="windows"){
       console.log("añadir touchtstamp en Windows");
       params.push('touchtstamp=' + moment().unix());
     }
-    
+
     // Format the list of parameters into a valid URI query string
     params = params.join('&');
     params = params === '' ? '' : '?' + params;
@@ -733,6 +733,11 @@ function HttpPouch(opts, callback) {
     if (opts.q) {
       params.push('q=' +
                   encodeURIComponent(opts.q));
+    }
+
+    if (opts.sort) {
+      params.push('sort=' +
+                  encodeURIComponent(opts.sort));
     }
 
     // If opts.limit exists, add the limit value to the parameter list.
@@ -3645,6 +3650,12 @@ var MapReduce = function (db) {
                   encodeURIComponent(opts.q));
 
       isFTsearch = true;
+
+
+      if (typeof opts.sort !== 'undefined') {
+        params.push('sort=' +
+                    encodeURIComponent(opts.sort));
+      }
     }
 
     // If keys are supplied, issue a POST request to circumvent GET query string limits
