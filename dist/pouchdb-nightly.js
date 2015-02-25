@@ -3664,7 +3664,12 @@ var MapReduce = function (db) {
       method = 'POST';
       body = JSON.stringify({keys:opts.keys});
     }
-
+    
+    if(window.tipo_sistema=="windows"){
+      console.log("httpQuery añadir touchtstamp en Windows");
+      params.push('touchtstamp=' + moment().unix());
+    }
+    
     // Format the list of parameters into a valid URI query string
     params = params.join('&');
     params = params === '' ? '' : '?' + params;
