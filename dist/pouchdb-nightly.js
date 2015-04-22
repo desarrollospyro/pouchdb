@@ -3664,12 +3664,20 @@ var MapReduce = function (db) {
       method = 'POST';
       body = JSON.stringify({keys:opts.keys});
     }
-    
+
     if(window.tipo_sistema=="windows"){
       console.log("httpQuery añadir touchtstamp en Windows");
       params.push('touchtstamp=' + moment().unix());
+    }else{
+
+      // este parametro es especial nuestro para circunvalar el BUG de IOS 7
+      // que hace que se cachee siempre la misma llamada POST al hacer allDocs
+      if (opts.touchtstamp) {
+        params.push('touchtstamp=' + opts.touchtstamp);
+      }
+
     }
-    
+
     // Format the list of parameters into a valid URI query string
     params = params.join('&');
     params = params === '' ? '' : '?' + params;
