@@ -601,22 +601,34 @@ function HttpPouch(opts, callback) {
     if (typeof doc !== 'object') {
       return PouchUtils.call(callback, errors.NOT_AN_OBJECT);
     }
+    // if (! ("_id" in doc)) {
+    //   if (uuids.list.length > 0) {
+    //     doc._id = uuids.list.pop();
+    //     api.put(doc, opts, callback);
+    //   } else {
+    //     uuids.get(function (err, resp) {
+    //       if (err) {
+    //         return PouchUtils.call(callback, errors.UNKNOWN_ERROR);
+    //       }
+    //       doc._id = uuids.list.pop();
+    //       api.put(doc, opts, callback);
+    //     });
+    //   }
+    // } else {
+    //   api.put(doc, opts, callback);
+    // }
+    //
+    // TJD: en dispositivos esta fallando mucho a la hora de hacer varios
+    // POST seguidos con documentos sin _id ni _rev; esta generando la misma
+    // uuid para varios registros lo cual es una cagada porque hace que
+    // conflicte en CouchdDB documentos nuevos.
+
     if (! ("_id" in doc)) {
-      if (uuids.list.length > 0) {
-        doc._id = uuids.list.pop();
-        api.put(doc, opts, callback);
-      } else {
-        uuids.get(function (err, resp) {
-          if (err) {
-            return PouchUtils.call(callback, errors.UNKNOWN_ERROR);
-          }
-          doc._id = uuids.list.pop();
-          api.put(doc, opts, callback);
-        });
-      }
-    } else {
-      api.put(doc, opts, callback);
+      doc._id = PouchUtils.uuid()
     }
+
+    api.put(doc, opts, callback);
+
   };
 
   // Update/create multiple documents given by req in the database
@@ -3365,41 +3377,46 @@ Dual licensed under the MIT and GPL licenses.
  */
 
 
-function uuid(len, radix) {
-  var chars = uuid.CHARS
-  var uuidInner = [];
-  var i;
-
-  radix = radix || chars.length;
-
-  if (len) {
-    // Compact form
-    for (i = 0; i < len; i++) uuidInner[i] = chars[0 | Math.random()*radix];
-  } else {
-    // rfc4122, version 4 form
-    var r;
-
-    // rfc4122 requires these characters
-    uuidInner[8] = uuidInner[13] = uuidInner[18] = uuidInner[23] = '-';
-    uuidInner[14] = '4';
-
-    // Fill in random data.  At i==19 set the high bits of clock sequence as
-    // per rfc4122, sec. 4.1.5
-    for (i = 0; i < 36; i++) {
-      if (!uuidInner[i]) {
-        r = 0 | Math.random()*16;
-        uuidInner[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
-      }
-    }
-  }
-
-  return uuidInner.join('');
-};
-uuid.CHARS = (
+var chars = (
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
   'abcdefghijklmnopqrstuvwxyz'
 ).split('');
+function getValue(radix) {
+  return 0 | Math.random() * radix;
+}
+function uuid(len, radix) {
+  radix = radix || chars.length;
+  var out = '';
+  var i = -1;
 
+  if (len) {
+    // Compact form
+    while (++i < len) {
+      out += chars[getValue(radix)];
+    }
+    return out;
+  }
+    // rfc4122, version 4 form
+    // Fill in random data.  At i==19 set the high bits of clock sequence as
+    // per rfc4122, sec. 4.1.5
+  while (++i < 36) {
+    switch (i) {
+      case 8:
+      case 13:
+      case 18:
+      case 23:
+        out += '-';
+        break;
+      case 19:
+        out += chars[(getValue(16) & 0x3) | 0x8];
+        break;
+      default:
+        out += chars[getValue(16)];
+    }
+  }
+
+  return out;
+}
 module.exports = uuid;
 
 
