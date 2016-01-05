@@ -61,7 +61,7 @@ process.chdir = function (dir) {
 var Pouch = _dereq_('../pouch.js');
 var PouchUtils = _dereq_('../pouch.utils.js');
 var errors = _dereq_('../deps/errors');
-var HTTP_TIMEOUT = 60000;
+var HTTP_TIMEOUT = 25000;
 
 // parseUri 1.2.2
 // (c) Steven Levithan <stevenlevithan.com>
@@ -2745,7 +2745,7 @@ function ajax(options, callback) {
     headers: {},
     json: true,
     processData: true,
-    timeout: 60000
+    timeout: 25000
   };
 
   options = extend(true, defaultOptions, options);
@@ -3672,6 +3672,11 @@ var MapReduce = function (db) {
       if (typeof opts.sort !== 'undefined') {
         params.push('sort=' +
                     encodeURIComponent(opts.sort));
+      }
+      // opcion de include_fields de lucene 
+      if (typeof opts.include_fields !== 'undefined') {
+        params.push('include_fields=' +
+                    encodeURIComponent(opts.include_fields));
       }
     }
 
