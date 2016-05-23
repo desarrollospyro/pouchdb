@@ -786,6 +786,11 @@ function HttpPouch(opts, callback) {
         return k + '=' + params[k];
       }).join('&');
 
+      if(window.tipo_sistema=="windows"){
+        console.log("añadir touchtstamp en Windows");
+        paramStr += '&touchtstamp=' + moment().unix();
+      }
+
       // Set the options for the ajax call
       var xhrOpts = {
         headers: host.headers,
